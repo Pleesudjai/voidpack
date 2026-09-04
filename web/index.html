@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASU AIR Packing Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="toolbar">
+        <select id="box-selector">
+            <option value="default">Default Box</option>
+        </select>
+        <button id="reset-view">Reset View</button>
+        <button id="re-pack">Re-Pack</button>
+        <button id="optimize-box">Optimized Box</button>
+        <span id="air-status">[ASU AIR: connecting]</span>
+    </div>
+    
+    <div class="main-container">
+        <div class="stage">
+            <div id="item-strip" class="item-strip"></div>
+            <div id="viewport"></div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="panel" id="items-panel">
+                <h3>ITEMS</h3>
+                <div class="measurement-grid">
+                    <div><span>bodies</span><span id="n-bodies">n/a</span></div>
+                    <div><span>total mass</span><span id="total-mass">not weighed</span></div>
+                </div>
+                <button id="apply-counts">APPLY</button>
+            </div>
+
+            <div class="panel" id="measurements">
+                <h3>MEASUREMENTS</h3>
+                <div class="measurement-grid">
+                    <div><span>container</span><span id="container-density">n/a</span></div>
+                    <div><span>hull</span><span id="hull-density">n/a</span></div>
+                    <div><span>laguerre</span><span id="laguerre-density">unavailable</span></div>
+                    <div><span>fill height</span><span id="fill-height">n/a</span></div>
+                    <div><span>gate</span><span id="gate-status">not run</span></div>
+                    <div><span>packed mass</span><span id="packed-mass">not weighed</span></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>BENCHMARK</h3>
+                <div class="benchmark-grid">
+                    <div><span>best q</span><span id="best-q">n/a</span></div>
+                    <div><span>wall ratio</span><span id="wall-ratio">n/a</span></div>
+                    <div><span>ceiling</span><span id="ceiling">n/a</span></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>RULES</h3>
+                <input type="text" id="rules-input" placeholder="Enter shipping rules...">
+                <button id="send-rules">SEND</button>
+            </div>
+            
+            <div class="panel">
+                <h3>TRANSCRIPT</h3>
+                <div id="transcript" class="transcript"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="vendor/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

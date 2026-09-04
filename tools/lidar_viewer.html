@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LiDAR Capture Viewer</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #111; color: #eee; }
+    header, .controls { padding: 14px 18px; background: #1b1b1b; border-bottom: 1px solid #333; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    main { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 14px; padding: 14px; }
+    video, img { width: 100%; background: #000; border: 1px solid #333; box-sizing: border-box; }
+    .preview-box { background: #000; border: 1px solid #333; overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; }
+    .preview-box img { border: 0; max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; }
+    .button-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .panel { background: #181818; border: 1px solid #333; padding: 12px; }
+    .stack { display: grid; gap: 12px; }
+    label { display: block; font-size: 12px; color: #bbb; margin: 8px 0 4px; }
+    input[type="range"] { width: 100%; }
+    input[type="number"], input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px; background: #0f0f0f; color: #eee; border: 1px solid #444; }
+    button { margin-top: 10px; padding: 9px 12px; border: 1px solid #777; background: #eee; color: #111; cursor: pointer; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; color: #ccc; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LiDAR Capture Viewer</h1>
+    <label for="captureSelect">Capture</label>
+    <select id="captureSelect"></select>
+    <div id="summary">Loading...</div>
+  </header>
+  <main>
+    <section class="stack">
+      <div class="panel">
+        <video id="rgb" controls src="/Lidar/75b9d04d0a/rgb.mp4"></video>
+      </div>
+      <div class="panel">
+        <label for="frame">Depth/confidence frame</label>
+        <input id="frame" type="range" min="0" max="2109" value="0">
+        <div id="frameLabel"></div>
+        <button id="prevFrame">Previous Frame</button>
+        <button id="nextFrame">Next Frame</button>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel">
+        <h1>Orange Cut Preview</h1>
+        <div class="preview-box">
+          <img id="orange" alt="Orange-only preview">
+        </div>
+        <div class="button-row">
+          <button id="rotateLeft">Rotate Left</button>
+          <button id="rotateRight">Rotate Right</button>
+          <button id="rotateReset">Reset</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h1>Depth Preview</h1>
+        <img id="depth" alt="Depth preview">
+      </div>
+      <div class="panel">
+        <h1>Confidence Preview</h1>
+        <img id="confidence" alt="Confidence preview">
+      </div>
+      <div class="panel">
+        <h1>Trim Orange Frames</h1>
+        <label for="start">Start frame</label>
+        <input id="start" type="number" min="0" value="0">
+        <label for="end">End frame</label>
+        <input id="end" type="number" min="0" value="2109">
+        <label for="label">Output label</label>
+        <input id="label" type="text" value="oranges">
+        <button id="trim">Create Trim</button>
+        <pre id="trimResult"></pre>
+      </div>
+    </aside>
+  </main>
+  <script>
+    const frame = document.getElementById('frame');
+    const frameLabel = document.getElementById('frameLabel');
+    const depth = document.getElementById('depth');
+    const confidence = document.getElementById('confidence');
+    const orange = document.getElementById('orange');
+    const rgb = document.getElementById('rgb');
+    const captureSelect = document.getElementById('captureSelect');
+    let fps = 60;
+    let captureId = '';
+    let orangeRotation = 0;
+
+    function applyOrangeRotation() {
+      const quarterTurn = Math.abs(orangeRotation % 180) === 90;
+      orange.style.transform = `rotate(${orangeRotation}deg)`;
+      orange.style.maxWidth = quarterTurn ? '75%' : '100%';
+      orange.style.maxHeight = quarterTurn ? '100%' : '100%';
+    }
+
+    function setFrame(n) {
+      frame.value = n;
+      frameLabel.textContent = `Frame ${n} / time ${(n / fps).toFixed(2)} s`;
+      const capture = encodeURIComponent(captureId);
+      depth.src = `/api/depth?capture=${capture}&frame=${n}&t=${Date.now()}`;
+      confidence.src = `/api/confidence?capture=${capture}&frame=${n}&t=${Date.now()}`;
+      orange.src = `/api/orange?capture=${capture}&frame=${n}&t=${Date.now()}`;
+    }
+
+    function loadCapture(id = '') {
+      const suffix = id ? `?capture=${encodeURIComponent(id)}` : '';
+      fetch(`/api/meta${suffix}`).then(r => r.json()).then(meta => {
+      fps = meta.fps;
+      captureId = meta.capture_id;
+      captureSelect.innerHTML = '';
+      for (const option of meta.options) {
+        const el = document.createElement('option');
+        el.value = option.id;
+        el.textContent = option.label;
+        el.selected = option.id === meta.capture_id;
+        captureSelect.appendChild(el);
+      }
+      rgb.src = meta.rgb_url;
+      document.getElementById('summary').textContent =
+        `${meta.frames} frames, ${meta.duration_s}s, depth ${meta.depth_size[0]}x${meta.depth_size[1]}, capture: ${meta.capture}`;
+      frame.max = meta.frames - 1;
+      document.getElementById('end').max = meta.frames - 1;
+      document.getElementById('end').value = meta.frames - 1;
+      setFrame(0);
+      });
+    }
+
+    loadCapture();
+    captureSelect.addEventListener('change', () => loadCapture(captureSelect.value));
+    frame.addEventListener('input', () => setFrame(Number(frame.value)));
+    document.getElementById('prevFrame').addEventListener('click', () => {
+      setFrame(Math.max(0, Number(frame.value) - 1));
+    });
+    document.getElementById('nextFrame').addEventListener('click', () => {
+      setFrame(Math.min(Number(frame.max), Number(frame.value) + 1));
+    });
+    document.getElementById('rotateLeft').addEventListener('click', () => {
+      orangeRotation = (orangeRotation - 90 + 360) % 360;
+      applyOrangeRotation();
+    });
+    document.getElementById('rotateRight').addEventListener('click', () => {
+      orangeRotation = (orangeRotation + 90) % 360;
+      applyOrangeRotation();
+    });
+    document.getElementById('rotateReset').addEventListener('click', () => {
+      orangeRotation = 0;
+      applyOrangeRotation();
+    });
+    rgb.addEventListener('timeupdate', () => {
+      const n = Math.min(Number(frame.max), Math.round(rgb.currentTime * fps));
+      if (Math.abs(Number(frame.value) - n) > 2) setFrame(n);
+    });
+
+    document.getElementById('trim').addEventListener('click', () => {
+      const start = document.getElementById('start').value;
+      const end = document.getElementById('end').value;
+      const label = encodeURIComponent(document.getElementById('label').value);
+      document.getElementById('trimResult').textContent = 'Trimming...';
+      fetch(`/api/trim?start=${start}&end=${end}&label=${label}`)
+        .then(r => r.json())
+        .then(data => document.getElementById('trimResult').textContent = JSON.stringify(data, null, 2));
+    });
+  </script>
+</body>
+</html>

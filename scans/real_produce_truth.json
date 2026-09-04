@@ -1,0 +1,113 @@
+{
+ "units_in_file": "metres",
+ "source": "Stray Scanner iPhone LiDAR, one frame per item, background removed",
+ "measured": "the two in-plane axes of every item, and every surface colour",
+ "constructed": "the table plane, the spacing between items, and the third axis, which one view cannot observe, see tools/compose_scene.py",
+ "colour_file": "real_produce_rgb.npy",
+ "n_points": 35131,
+ "n_item_points": 16346,
+ "n_table_points": 18785,
+ "n_bodies": 4,
+ "bodies": [
+  {
+   "label": "egg",
+   "scan": "0eac8a9a8b",
+   "frame": "000520.png",
+   "n_points": 2866,
+   "coloured": true,
+   "synthetic_surface_fraction": 1.0,
+   "scaled_to_nominal": true,
+   "inplane_mm": [
+    56.97,
+    43.99
+   ],
+   "inplane_is": "nominal ellipsoid, geometry synthetic and colour measured, the thumb occludes this item in every frame",
+   "height_mm": 43.99,
+   "height_is": "constructed, circular cross-section about the long axis",
+   "centre_mm": [
+    28.49,
+    0.01,
+    21.99
+   ],
+   "centre_xy_mm": [
+    28.49,
+    0.01
+   ]
+  },
+  {
+   "label": "grapefruit",
+   "scan": "6b060981ba",
+   "frame": "000180.png",
+   "n_points": 8428,
+   "coloured": true,
+   "synthetic_surface_fraction": 0.0678,
+   "scaled_to_nominal": false,
+   "inplane_mm": [
+    93.99,
+    88.27
+   ],
+   "inplane_is": "measured",
+   "height_mm": 86.5,
+   "height_is": "constructed, circular cross-section about the long axis",
+   "centre_mm": [
+    156.84,
+    -0.49,
+    43.27
+   ],
+   "centre_xy_mm": [
+    156.84,
+    -0.49
+   ]
+  },
+  {
+   "label": "avocado",
+   "scan": "93390ea0af",
+   "frame": "000220.png",
+   "n_points": 2360,
+   "coloured": true,
+   "synthetic_surface_fraction": 0.0771,
+   "scaled_to_nominal": false,
+   "inplane_mm": [
+    66.51,
+    39.09
+   ],
+   "inplane_is": "measured",
+   "height_mm": 37.49,
+   "height_is": "constructed, circular cross-section about the long axis",
+   "centre_mm": [
+    294.52,
+    -0.28,
+    18.74
+   ],
+   "centre_xy_mm": [
+    294.52,
+    -0.28
+   ]
+  },
+  {
+   "label": "potato",
+   "scan": "f9a19bb445",
+   "frame": "000310.png",
+   "n_points": 2692,
+   "coloured": true,
+   "synthetic_surface_fraction": 0.1252,
+   "scaled_to_nominal": false,
+   "inplane_mm": [
+    71.44,
+    38.17
+   ],
+   "inplane_is": "measured",
+   "height_mm": 37.04,
+   "height_is": "constructed, circular cross-section about the long axis",
+   "centre_mm": [
+    419.2,
+    -0.99,
+    18.49
+   ],
+   "centre_xy_mm": [
+    419.2,
+    -0.99
+   ]
+  }
+ ]
+}

@@ -1,0 +1,433 @@
+# AIR Tools Layer - Model Integration
+# This module provides the interface between the AIR model and the packing solver
+
+import os
+import json
+import requests
+from typing import List, Dict, Any, Optional
+
+# Base URL for ASU AI Research Platform
+BASE_URL = "https://openai.rc.asu.edu/v1"
+
+def tool_specs() -> List[Dict[str, Any]]:
+    """Return OpenAI-format tool schemas for the model.
+    
+    Provides exactly two tools:
+    - list_items(): Returns current item library
+    - pack(box_mm, rules): Runs the solver with constraints
+    """
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "list_items",
+                "description": "List all available items in the current library with their properties",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function", 
+            "function": {
+                "name": "pack",
+                "description": "Pack items into a box according to specified rules and constraints",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "box_mm": {
+                            "type": "array",
+                            "items": {"type": "number"},
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "description": "Box dimensions [width, depth, height] in millimeters"
+                        },
+                        "rules": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": ["fragile", "keep_upright", "max_weight"],
+                                        "description": "Type of constraint"
+                                    },
+                                    "item": {
+                                        "type": "string",
+                                        "description": "Item label this rule applies to (for fragile and keep_upright)"
+                                    },
+                                    "limit_g": {
+                                        "type": "number",
+                                        "description": "Maximum weight limit in grams (for max_weight)"
+                                    },
+                                    "raw": {
+                                        "type": "string",
+                                        "description": "Original user text that generated this rule"
+                                    }
+                                },
+                                "required": ["kind", "raw"],
+                                "additionalProperties": False
+                            }
+                        }
+                    },
+                    "required": ["box_mm", "rules"]
+                }
+            }
+        }
+    ]
+
+def call_tool(name: str, arguments: Dict[str, Any], items: List[Dict[str, Any]], box_catalog: Dict[str, Any]) -> Dict[str, Any]:
+    """Dispatch one tool call. Never raises on bad input from the model.
+    
+    Args:
+        name: Tool name ('list_items' or 'pack')
+        arguments: Tool arguments from model
+        items: Current item library
+        box_catalog: Available box dimensions
+        
+    Returns:
+        Tool response dictionary, or error dictionary if validation fails
+    """
+    try:
+        if name == "list_items":
+            # Return item information as dictionaries, not Item objects
+            return {"items": [
+                {
+                    "label": item.label,
+                    "axes_mm": list(item.axes),
+                    "mass_g": item.mass_g,
+                    "deformable": item.deformable
+                }
+                for item in items
+            ]}
+        
+        elif name == "pack":
+            # Validate arguments against schema
+            validation_errors = []
+            
+            # Validate box_mm
+            if not isinstance(arguments.get("box_mm"), list) or len(arguments["box_mm"]) != 3:
+                validation_errors.append("box_mm must be an array of 3 numbers")
+            else:
+                for dim in arguments["box_mm"]:
+                    if not isinstance(dim, (int, float)) or dim <= 0:
+                        validation_errors.append("box_mm dimensions must be positive numbers")
+                        break
+            
+            # Validate rules
+            if not isinstance(arguments.get("rules"), list):
+                validation_errors.append("rules must be an array")
+            else:
+                for i, rule in enumerate(arguments["rules"]):
+                    if not isinstance(rule, dict):
+                        validation_errors.append(f"rules[{i}] must be an object")
+                        continue
+                    
+                    if "kind" not in rule:
+                        validation_errors.append(f"rules[{i}] missing required field 'kind'")
+                        continue
+                    
+                    if rule["kind"] not in ["fragile", "keep_upright", "max_weight"]:
+                        validation_errors.append(f"rules[{i}] kind must be 'fragile', 'keep_upright', or 'max_weight'")
+                    
+                    if rule["kind"] in ["fragile", "keep_upright"] and "item" not in rule:
+                        validation_errors.append(f"rules[{i}] missing required field 'item' for kind '{rule['kind']}'")
+                    
+                    if rule["kind"] == "max_weight" and "limit_g" not in rule:
+                        validation_errors.append(f"rules[{i}] missing required field 'limit_g' for kind 'max_weight'")
+            
+            if validation_errors:
+                # Add validation error information to rejected rules
+                rejected_rules = []
+                for i, rule in enumerate(arguments.get("rules", [])):
+                    rule_copy = rule.copy()
+                    # Find validation errors for this rule
+                    rule_errors = [err for err in validation_errors if f"rules[{i}]" in err]
+                    if rule_errors:
+                        rule_copy["_validation_error"] = "; ".join(rule_errors)
+                    rejected_rules.append(rule_copy)
+                
+                return {
+                    "error": "Invalid tool arguments",
+                    "validation_errors": validation_errors,
+                    "rejected": rejected_rules
+                }
+            
+            # Import solver functions
+            from src.solver.place import pack
+            from src.solver.density import density_report
+            from src.types import Item, Box
+            
+            # Convert items to Item objects
+            solver_items = []
+            for item_data in items:
+                try:
+                    item = Item(
+                        label=item_data["label"],
+                        axes=tuple(item_data["axes_mm"]),
+                        mass_g=item_data["mass_g"],
+                        deformable=item_data.get("deformable", False)
+                    )
+                    solver_items.append(item)
+                except (KeyError, TypeError) as e:
+                    return {
+                        "error": f"Invalid item data: {e}",
+                        "rejected": []
+                    }
+            
+            # Create box
+            try:
+                box = Box(
+                    width=arguments["box_mm"][0],
+                    depth=arguments["box_mm"][1],
+                    height=arguments["box_mm"][2]
+                )
+            except (IndexError, TypeError) as e:
+                return {
+                    "error": f"Invalid box dimensions: {e}",
+                    "rejected": []
+                }
+            
+            # Run packing
+            try:
+                placements, unplaced = pack(solver_items, box, arguments["rules"], seed=42)
+                report = density_report(placements, box)
+                
+                return {
+                    "placed": len(placements),
+                    "unplaced": len(unplaced),
+                    "container_density": report["container_density"],
+                    "hull_density": report["hull_density"],
+                    "laguerre_density": report["laguerre_density"],
+                    "fill_height_mm": report["fill_height_mm"],
+                    "gate": report["gate"],
+                    "max_penetration_mm": report["max_penetration_mm"],
+                    "placements": [
+                        {
+                            "label": p.item.label,
+                            "centre_mm": list(p.centre_mm),
+                            "orientation": list(p.orientation),
+                            "volume_mm3": p.item.volume_mm3
+                        }
+                        for p in placements
+                    ],
+                    "unplaced_items": [item.label for item in unplaced]
+                }
+            except Exception as e:
+                return {
+                    "error": f"Packing failed: {str(e)}",
+                    "rejected": arguments.get("rules", [])
+                }
+        
+        else:
+            return {"error": f"Unknown tool: {name}"}
+            
+    except Exception as e:
+        return {
+            "error": f"Tool execution failed: {str(e)}",
+            "rejected": arguments.get("rules", []) if name == "pack" else []
+        }
+
+def run_turn(user_text: str, items: List[Dict[str, Any]], box_catalog: Dict[str, Any], 
+             model: str = "devstral2-123b", max_steps: int = 4, _transport=None) -> Dict[str, Any]:
+    """Execute one conversational turn against AIR.
+    
+    Args:
+        user_text: User input text
+        items: Current item library
+        box_catalog: Available box dimensions
+        model: AIR model to use
+        max_steps: Maximum number of tool calls allowed
+        _transport: Injectable transport for testing (optional)
+        
+    Returns:
+        Dictionary with transcript, final text, and last result
+    """
+    # Get API key from environment
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return {
+            "error": "OPENAI_API_KEY environment variable not set",
+            "transcript": [],
+            "final_text": "",
+            "last_result": None
+        }
+    
+    # Prepare messages
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a packaging optimization assistant. Your job is to translate user requests into tool calls and narrate the results. You do NOT compute any numbers yourself - all calculations come from the tools. Be concise and technical."
+        },
+        {
+            "role": "user",
+            "content": user_text
+        }
+    ]
+    
+    transcript = []
+    final_text = ""
+    last_result = None
+    
+    # Make API call
+    try:
+        if _transport:
+            # Use injectable transport for testing
+            data = _transport({
+                "model": model,
+                "messages": messages,
+                "tools": tool_specs(),
+                "tool_choice": "auto",
+                "max_tokens": 500
+            })
+        else:
+            response = requests.post(
+                f"{BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "tools": tool_specs(),
+                    "tool_choice": "auto",
+                    "max_tokens": 500
+                },
+                timeout=30
+            )
+            
+        if not _transport:
+            response.raise_for_status()
+            data = response.json()
+        
+        # Process response
+        if "choices" in data and len(data["choices"]) > 0:
+            choice = data["choices"][0]
+            message = choice["message"]
+            
+            # Add model message to transcript
+            transcript.append({
+                "role": "model",
+                "name": None,
+                "arguments": None,
+                "content": message.get("content", "")
+            })
+            
+            # Handle tool calls
+            tool_calls = message.get("tool_calls", [])
+            step_count = 0
+            
+            while tool_calls and step_count < max_steps:
+                for tool_call in tool_calls:
+                    if step_count >= max_steps:
+                        break
+                    
+                    tool_name = tool_call["function"]["name"]
+                    tool_args = json.loads(tool_call["function"]["arguments"])
+                    
+                    # Add tool call to transcript
+                    transcript.append({
+                        "role": "model",
+                        "name": tool_name,
+                        "arguments": tool_args,
+                        "content": None
+                    })
+                    
+                    # Execute tool
+                    tool_result = call_tool(tool_name, tool_args, items, box_catalog)
+                    
+                    # Add tool result to transcript
+                    transcript.append({
+                        "role": "tool",
+                        "name": tool_name,
+                        "arguments": None,
+                        "content": tool_result
+                    })
+                    
+                    # Add tool result to messages
+                    messages.append({
+                        "role": "tool",
+                        "name": tool_name,
+                        "content": json.dumps(tool_result),
+                        "tool_call_id": tool_call["id"]
+                    })
+                    
+                    last_result = tool_result
+                    step_count += 1
+                
+        # Get next model response
+        if step_count < max_steps:
+            if _transport:
+                # Use injectable transport for testing
+                data = _transport({
+                    "model": model,
+                    "messages": messages,
+                    "tools": tool_specs(),
+                    "tool_choice": "auto",
+                    "max_tokens": 500
+                })
+            else:
+                response = requests.post(
+                    f"{BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "tools": tool_specs(),
+                        "tool_choice": "auto",
+                        "max_tokens": 500
+                    },
+                    timeout=30
+                )
+                
+            if not _transport:
+                response.raise_for_status()
+                data = response.json()
+                
+                    if "choices" in data and len(data["choices"]) > 0:
+                        choice = data["choices"][0]
+                        message = choice["message"]
+                           
+                        # Add model message to transcript
+                        transcript.append({
+                            "role": "model",
+                            "name": None,
+                            "arguments": None,
+                            "content": message.get("content", "")
+                        })
+                           
+                        tool_calls = message.get("tool_calls", [])
+                        final_text = message.get("content", "")
+                    else:
+                        break
+                
+            # Final model response
+            if not final_text and len(transcript) > 0 and transcript[-1]["role"] == "model":
+                final_text = transcript[-1]["content"]
+        
+        return {
+            "transcript": transcript,
+            "final_text": final_text,
+            "last_result": last_result
+        }
+        
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": f"API request failed: {str(e)}",
+            "transcript": transcript,
+            "final_text": final_text,
+            "last_result": last_result
+        }
+    except Exception as e:
+        return {
+            "error": f"Unexpected error: {str(e)}",
+            "transcript": transcript,
+            "final_text": final_text,
+            "last_result": last_result
+        }

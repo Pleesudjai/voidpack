@@ -1,0 +1,16 @@
+{
+  "_README": "Author-supplied masses in GRAMS, one per library label. A scan cannot weigh anything, so these are the only masses in the system. Replace each 0 with the reading from a kitchen scale and restart the bridge. A value of 0 is treated as not weighed, so a max_weight rule will compile and then constrain nothing until every entry is positive.",
+  "source": "FILL IN, for example: kitchen scale, Escali Primo, 1 g resolution, 2026-09-03",
+  "units": "grams",
+  "masses": {
+    "grapefruit": 0,
+    "egg": 0,
+    "potato": 0,
+    "avocado": 0
+  },
+  "_README_flags": "Author-declared item properties. `fragile` means nothing of a DIFFERENT kind may rest on it, though copies of the same kind may stack, so eggs stack on eggs but a potato never sits on an egg. These are declared here, never inferred from a label.",
+  "fragile": [
+    "egg"
+  ],
+  "keep_upright": []
+}

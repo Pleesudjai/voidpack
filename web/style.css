@@ -1,0 +1,205 @@
+/* ASU AIR Packing Visualizer - Style */
+
+:root {
+    --bg: #f4f5f6;
+    --panel: #ffffff;
+    --line: #c9ccd1;
+    --ink: #1c1f23;
+    --muted: #5b6068;
+    --accent: #0b6b53;
+    --warn: #b3261e;
+    --viewport: #e8eaec;
+}
+
+body {
+    font-family: system-ui, "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background-color: var(--bg);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.toolbar {
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toolbar select, .toolbar button {
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--line);
+    background-color: var(--panel);
+    cursor: pointer;
+}
+
+.toolbar button:hover {
+    background-color: #f0f0f0;
+}
+
+#air-status {
+    margin-left: auto;
+    color: var(--accent);
+    font-size: 12px;
+}
+
+.main-container {
+    display: flex;
+    height: calc(100vh - 40px);
+}
+
+#viewport {
+    flex: 1;
+    background-color: var(--viewport);
+    position: relative;
+}
+
+.sidebar {
+    width: 35%;
+    background-color: var(--panel);
+    border-left: 1px solid var(--line);
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.panel {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.panel:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.panel h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.measurement-grid, .benchmark-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.measurement-grid span, .benchmark-grid span {
+    display: block;
+}
+
+.measurement-grid span:first-child, .benchmark-grid span:first-child {
+    color: var(--muted);
+}
+
+.measurement-grid span:last-child, .benchmark-grid span:last-child {
+    text-align: right;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+#rules-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+#send-rules {
+    width: 100%;
+    padding: 6px;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+#send-rules:hover {
+    background-color: #085a46;
+}
+
+#transcript {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--ink);
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 2px;
+    height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Status indicators */
+.passed {
+    color: var(--accent);
+}
+
+.failed {
+    color: var(--warn);
+}
+
+/* 3D Viewport */
+canvas {
+    display: block;
+}
+
+/* 2026-09-03, requested. Label and value on one line, value right-aligned in
+   tabular monospace, so the gate readout never wraps. Later rules win. */
+.panel .measurement-grid, .panel .benchmark-grid { display: block; }
+.panel .measurement-grid > div, .panel .benchmark-grid > div {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--line);
+}
+.panel .measurement-grid > div > span:first-child,
+.panel .benchmark-grid > div > span:first-child { color: var(--muted); }
+.panel .measurement-grid > div > span:last-child,
+.panel .benchmark-grid > div > span:last-child {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+}
+
+/* 2026-09-03, requested. The whole page in the terminal font OpenCode uses,
+   Cascadia Mono then Consolas. One rule, remove it to go back to Segoe UI. */
+body, button, input, select, h3, .toolbar, .panel {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* Item count spinners. One row per library type. */
+.item-counts { margin-bottom: 8px; }
+.count-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 2px 0; }
+.count-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.count-row input { width: 52px; text-align: right; font: inherit; padding: 1px 4px; }
+
+/* Item strip. One cell per library type, sitting across the top of the 3D view.
+   Each cell carries the type name, a live point-cloud thumbnail of that body,
+   and the count handed to the solver. */
+.stage { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.item-strip {
+    display: flex; gap: 8px; padding: 8px;
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto; flex: 0 0 auto;
+}
+.item-cell {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); border-radius: 2px;
+    padding: 4px 8px; background-color: var(--viewport); flex: 0 0 auto;
+}
+.item-cell .cell-text { display: flex; flex-direction: column; line-height: 1.35; }
+.item-cell .cell-name { font-weight: 600; }
+.item-cell .cell-sub { opacity: 0.65; font-size: 0.85em; }
+.item-cell input { width: 46px; text-align: right; font: inherit; padding: 1px 4px; }

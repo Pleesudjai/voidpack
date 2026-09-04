@@ -1,0 +1,78 @@
+# WRITTEN BEFORE `git init`. Do not commit a key. Ever.
+.env
+.env.*
+*.key
+secrets.json
+opencode.json
+
+# Scans are large and are not redistributable
+scans/raw/
+*.tar
+*.ply
+*.pcd
+gso/
+gso_full/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Devstral's rewritten tests, kept for comparison only, not part of the contract
+tests_devstral_backup/
+
+# editor backups made during the 2026-09-03 fixes
+*.bak
+.gstack/
+
+# --- added before the first commit, 2026-09-03 ---
+
+# Raw Stray Scanner captures, 206 MB of zips. The DERIVED clouds in scans/objects
+# and scans/*.npy are small and ARE committed, so the pipeline is reproducible
+# from what ships. The raw zips are available on request.
+Lidar/
+
+# ASU-owned material, not ours to redistribute
+*.pptx
+Spark Challenge Prep Workshop Deck.pdf
+_air_deck_text.txt
+
+# Throwaway probes from the 2026-09-03 debugging session
+debug_*.py
+watch_devstral.log
+
+# Agent workspace files. The tools that wrote this code are DISCLOSED in
+# README.md under "How this was built". These are working files, not the
+# disclosure, and the disclosure stays in the README.
+.claude/
+.gstack/
+CLAUDE.md
+AGENTS.md
+
+# my own pre-package backup
+.gitignore.bak-*
+
+# watchdog from the 2026-09-03 session, working file, not part of the deliverable
+watch_devstral.py
+watch_loop.sh
+
+# Internal planning and session notes. Working files, not deliverables.
+# Removed from the public repo 2026-09-04. They stay on disk.
+STRATEGY.md
+TEAM.md
+IMPLEMENTATION_REQUIREMENTS.md
+IMPLEMENTATION_SUMMARY.md
+docs/handoff.md
+docs/todo.md
+docs/decisions.md
+docs/huggingface_lidar_datasets.md
+specs/T00_existing_code_assets.md

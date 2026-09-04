@@ -1,0 +1,63 @@
+{
+ "units_in_file": "metres",
+ "frame": "camera, +z away from the lens",
+ "source": "Stray Scanner iPhone LiDAR, one frame per capture",
+ "items": [
+  {
+   "label": "egg",
+   "scan": "0eac8a9a8b",
+   "frame": "000520.png",
+   "n_points": 2384,
+   "pca_extent_mm": [
+    47.050743068025575,
+    41.62998054090716,
+    18.082199832512064
+   ],
+   "aspect": 1.1302129488576573,
+   "npy": "scans/objects/egg.npy",
+   "rgb_npy": "scans/objects/egg_rgb.npy"
+  },
+  {
+   "label": "grapefruit",
+   "scan": "6b060981ba",
+   "frame": "000180.png",
+   "n_points": 8838,
+   "pca_extent_mm": [
+    95.43679446539694,
+    87.59188764074338,
+    44.692031593498314
+   ],
+   "aspect": 1.089562024931228,
+   "npy": "scans/objects/grapefruit.npy",
+   "rgb_npy": "scans/objects/grapefruit_rgb.npy"
+  },
+  {
+   "label": "avocado",
+   "scan": "93390ea0af",
+   "frame": "000220.png",
+   "n_points": 2996,
+   "pca_extent_mm": [
+    69.87864399600181,
+    43.87087655639968,
+    29.014212315281693
+   ],
+   "aspect": 1.592825342939455,
+   "npy": "scans/objects/avocado.npy",
+   "rgb_npy": "scans/objects/avocado_rgb.npy"
+  },
+  {
+   "label": "potato",
+   "scan": "f9a19bb445",
+   "frame": "000310.png",
+   "n_points": 2981,
+   "pca_extent_mm": [
+    77.75517084558176,
+    37.7649871315828,
+    28.426642527511248
+   ],
+   "aspect": 2.0589222121184103,
+   "npy": "scans/objects/potato.npy",
+   "rgb_npy": "scans/objects/potato_rgb.npy"
+  }
+ ]
+}

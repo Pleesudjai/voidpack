@@ -1,0 +1,9 @@
+# Verified installable on this machine, Python 3.13.2, 2026-09-03.
+# Do NOT add open3d. It has no wheel for Python 3.13 and pip resolves to nothing.
+# Do NOT add scikit-learn. Not installed and not needed, DBSCAN is implemented on
+# scipy.spatial.cKDTree in T08.
+numpy>=2.2
+scipy>=1.16
+matplotlib>=3.10
+pytest>=9.0
+openai>=1.0
