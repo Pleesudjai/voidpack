@@ -76,3 +76,9 @@ docs/todo.md
 docs/decisions.md
 docs/huggingface_lidar_datasets.md
 specs/T00_existing_code_assets.md
+
+# Session working material, kept in Dropbox for the MSI machine, not public.
+# deck/ holds the pitch deck source, see deck/README.md before editing it.
+deck/
+docs/session_2026-09-03/
+docs/written_answers.md
