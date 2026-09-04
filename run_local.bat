@@ -35,6 +35,7 @@ if errorlevel 1 (
 )
 
 echo Starting the bridge on scans\real_produce.npy, the initial pack takes about 20 s ...
-start "" /b cmd /c "timeout /t 25 /nobreak >nul && start http://127.0.0.1:8000"
+REM Full path, because a Git Bash on PATH shadows Windows timeout with the GNU one.
+start "" /b cmd /c "%SystemRoot%\System32\timeout.exe /t 25 /nobreak >nul && start http://127.0.0.1:8000"
 python -m src.air.bridge --scan scans\real_produce.npy
 endlocal

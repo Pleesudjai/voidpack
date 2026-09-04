@@ -7,6 +7,9 @@ once on 2026-09-03, so it is now enforced by checksum rather than by request.
     python tools_check_tests.py            verify nothing changed, exit 1 if it did
 
 Run the verify form before every commit and before the submission.
+
+Checksums are taken over content with CRLF normalised to LF since 2026-09-04, so the
+same suite verifies on a Windows checkout, a Linux checkout and a Dropbox copy alike.
 """
 import glob
 import hashlib
@@ -19,7 +22,11 @@ MANIFEST = "tests/CHECKSUMS.txt"
 def digests():
     out = {}
     for p in sorted(glob.glob("tests/test_*.py")):
-        h = hashlib.sha256(open(p, "rb").read()).hexdigest()
+        # Hash with line endings normalised, so a checkout that rewrites CRLF
+        # to LF, or a Dropbox sync that does the reverse, is not reported as an
+        # edit. Content is what the contract protects, not the newline bytes.
+        raw = open(p, "rb").read().replace(b"\r\n", b"\n")
+        h = hashlib.sha256(raw).hexdigest()
         out[p.replace("\\", "/")] = h
     return out
 
