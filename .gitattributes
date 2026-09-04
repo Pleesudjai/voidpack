@@ -1,0 +1,7 @@
+# Normalise line endings so a Dropbox sync between a Windows and another machine
+# does not show every text file as modified. Added 2026-09-04.
+* text=auto
+*.npy binary
+*.png binary
+*.jpg binary
+*.pdf binary

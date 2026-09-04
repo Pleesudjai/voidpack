@@ -149,14 +149,35 @@ verified nothing. That rule was violated once today by the executor and caught.
 
 ## Running it
 
+Fresh machine, three steps. Clone to a folder that is NOT inside Dropbox or another sync
+client, because a synced `.git` directory corrupts when two machines touch it.
+
+```
+git clone https://github.com/Pleesudjai/voidpack
+cd voidpack
+run_local.bat                     # Windows, checks the key, installs, starts, opens the page
+```
+
+The launcher refuses to start without `OPENAI_API_KEY`, installs `requirements.txt`, warns when
+the AIR endpoint is unreachable, starts the bridge on the real produce scan and opens
+`http://127.0.0.1:8000` after the 20 second initial pack. The same by hand on any platform
+
 ```
 pip install -r requirements.txt
 set OPENAI_API_KEY=...            # from https://voyager.rc.asu.edu, LLM Access tab
-python -m src.air.bridge          # loads the scan, packs it, serves http://127.0.0.1:8000
+python -m src.air.bridge --scan scans/real_produce.npy
 ```
 
-The ASU VPN is required at `sslvpn.asu.edu/2fa`. The browser talks only to the local bridge
-and never sees the key. `python -m src.air.bridge --no-pack` skips the 20 second initial pack.
+then open `http://127.0.0.1:8000` in a browser. Opening `web/index.html` as a file loads
+nothing. Without `--scan` the bridge loads the synthetic scene. `--no-pack` skips the initial
+pack. The ASU VPN is required at `sslvpn.asu.edu/2fa`, without it the solver still packs and
+only the rule compilation fails. The browser talks only to the local bridge and never sees
+the key. Before trusting a checkout, run
+
+```
+python tools_check_tests.py       # the 16 test files are unmodified
+python -m pytest tests/ -q        # 121 passed on 2026-09-04, Python 3.13.2, about 90 s
+```
 
 In the page, drag any body into another. The exact contact test runs on every pointer move and
 the readout turns red with the interpenetration in millimetres. Release and it snaps back.
